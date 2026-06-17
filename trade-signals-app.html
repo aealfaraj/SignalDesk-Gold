@@ -1002,7 +1002,13 @@
         return;
       }
 
+      await navigator.serviceWorker.register("/sw.js");
       const registration = await navigator.serviceWorker.ready;
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
@@ -1021,6 +1027,10 @@
     async function testPushNotification() {
       const data = await apiRequest("/api/push/test", { method: "POST" });
       const result = data.result || {};
+      if (!result.attempted) {
+        showToast("No subscribed devices. Tap Enable alerts on the phone first.");
+        return;
+      }
       showToast(`Test alert: sent ${result.sent || 0}/${result.attempted || 0}${result.error ? ` - ${result.error}` : ""}`);
     }
 
