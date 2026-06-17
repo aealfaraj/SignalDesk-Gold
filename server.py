@@ -17,6 +17,7 @@ COOKIE_SECURE = os.environ.get("SIGNALDESK_SECURE_COOKIES", "0") == "1"
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@example.com")
+LAST_PUSH_RESULT = {"attempted": 0, "sent": 0, "removed": 0, "error": ""}
 SESSIONS = {}
 
 INITIAL_SIGNALS = [
@@ -102,17 +103,23 @@ def notification_payload(signal):
 
 
 def send_push_notifications(signal):
+    global LAST_PUSH_RESULT
+    LAST_PUSH_RESULT = {"attempted": 0, "sent": 0, "removed": 0, "error": ""}
+
     if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        LAST_PUSH_RESULT["error"] = "VAPID keys are missing"
         return
 
     try:
         from pywebpush import WebPushException, webpush
-    except Exception:
+    except Exception as error:
+        LAST_PUSH_RESULT["error"] = f"pywebpush unavailable: {error}"
         return
 
     subscriptions = read_subscriptions()
     next_subscriptions = []
     payload = json.dumps(notification_payload(signal))
+    LAST_PUSH_RESULT["attempted"] = len(subscriptions)
 
     for subscription in subscriptions:
         try:
@@ -122,11 +129,15 @@ def send_push_notifications(signal):
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": VAPID_CLAIM_EMAIL},
             )
+            LAST_PUSH_RESULT["sent"] += 1
             next_subscriptions.append(subscription)
         except WebPushException as error:
             status = getattr(getattr(error, "response", None), "status_code", None)
             if status not in {404, 410}:
                 next_subscriptions.append(subscription)
+                LAST_PUSH_RESULT["error"] = str(error)
+            else:
+                LAST_PUSH_RESULT["removed"] += 1
 
     write_subscriptions(next_subscriptions)
 
@@ -207,6 +218,13 @@ class SignalDeskHandler(SimpleHTTPRequestHandler):
         if path == "/api/push/public-key":
             self.send_json({"publicKey": VAPID_PUBLIC_KEY, "enabled": bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)})
             return
+        if path == "/api/push/status":
+            self.send_json({
+                "enabled": bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY),
+                "subscriptions": len(read_subscriptions()),
+                "lastPush": LAST_PUSH_RESULT,
+            })
+            return
         if path == "/":
             self.path = "/trade-signals-app.html"
         super().do_GET()
@@ -258,6 +276,18 @@ class SignalDeskHandler(SimpleHTTPRequestHandler):
             existing[subscription_key(subscription)] = subscription
             write_subscriptions(list(existing.values()))
             self.send_json({"ok": True, "count": len(existing)})
+            return
+
+        if path == "/api/push/test":
+            if not self.require_admin():
+                return
+            send_push_notifications({
+                "id": f"test-{secrets.token_hex(4)}",
+                "symbol": "XAUUSD",
+                "direction": "TEST",
+                "entry": "notification test",
+            })
+            self.send_json({"ok": True, "result": LAST_PUSH_RESULT})
             return
 
         if path == "/api/reset-demo":

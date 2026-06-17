@@ -649,6 +649,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/></svg>
           Enable alerts
         </button>
+        <button class="button secondary" type="button" id="testNotifyButton">
+          Test alert
+        </button>
       </section>
 
       <section class="summary" aria-label="Signal statistics">
@@ -862,7 +865,8 @@
       refreshPriceButton: document.getElementById("refreshPriceButton"),
       quickBuyButton: document.getElementById("quickBuyButton"),
       quickSellButton: document.getElementById("quickSellButton"),
-      notifyButton: document.getElementById("notifyButton")
+      notifyButton: document.getElementById("notifyButton"),
+      testNotifyButton: document.getElementById("testNotifyButton")
     };
 
     function loadSignals() {
@@ -1010,7 +1014,14 @@
       });
 
       updateNotifyButton();
-      showToast("Signal alerts enabled");
+      const status = await apiRequest("/api/push/status");
+      showToast(`Signal alerts enabled (${status.subscriptions} device${status.subscriptions === 1 ? "" : "s"})`);
+    }
+
+    async function testPushNotification() {
+      const data = await apiRequest("/api/push/test", { method: "POST" });
+      const result = data.result || {};
+      showToast(`Test alert: sent ${result.sent || 0}/${result.attempted || 0}${result.error ? ` - ${result.error}` : ""}`);
     }
 
     async function deleteSignal(id) {
@@ -1216,6 +1227,7 @@
       els.loginPanel.style.display = admin && !isAdminUnlocked ? "block" : "none";
       els.adminPanel.style.display = canEdit ? "block" : "none";
       els.seedButton.style.display = canEdit ? "inline-flex" : "none";
+      els.testNotifyButton.style.display = canEdit ? "inline-flex" : "none";
       els.viewTitle.textContent = admin ? (isAdminUnlocked ? "Admin dashboard" : "Admin access") : "Member signal feed";
       els.viewSubtitle.textContent = admin
         ? (isAdminUnlocked ? "Create, update, and publish signals for your members." : "Unlock the dashboard to manage published signals.")
@@ -1307,6 +1319,9 @@
     els.quickSellButton.addEventListener("click", () => quickPublish("SELL"));
     els.notifyButton.addEventListener("click", () => {
       enablePushNotifications().catch(error => showToast(error.message));
+    });
+    els.testNotifyButton.addEventListener("click", () => {
+      testPushNotification().catch(error => showToast(error.message));
     });
 
     els.loginForm.addEventListener("submit", async event => {
