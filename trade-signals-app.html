@@ -1020,7 +1020,7 @@
 
       await apiRequest("/api/push/subscribe", {
         method: "POST",
-        body: JSON.stringify(subscription)
+        body: JSON.stringify(subscription.toJSON ? subscription.toJSON() : subscription)
       });
 
       updateNotifyButton();
@@ -1032,7 +1032,23 @@
       showToast(`Signal alerts enabled (${status.subscriptions} device${status.subscriptions === 1 ? "" : "s"})`);
     }
 
+    async function saveExistingPushSubscription() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+      if (Notification.permission !== "granted") return false;
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return false;
+
+      await apiRequest("/api/push/subscribe", {
+        method: "POST",
+        body: JSON.stringify(subscription.toJSON ? subscription.toJSON() : subscription)
+      });
+      return true;
+    }
+
     async function showAlertStatus() {
+      await saveExistingPushSubscription().catch(() => false);
       const status = await apiRequest("/api/push/status");
       if (!status.enabled) {
         showToast("Push keys missing in Render environment");
