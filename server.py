@@ -11,8 +11,12 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = Path(os.environ.get("SIGNALDESK_DATA_DIR", ROOT / "data"))
 DATA_FILE = DATA_DIR / "signals.json"
+SUBSCRIPTIONS_FILE = DATA_DIR / "push_subscriptions.json"
 ADMIN_CODE = os.environ.get("SIGNALDESK_ADMIN_CODE", "1234")
 COOKIE_SECURE = os.environ.get("SIGNALDESK_SECURE_COOKIES", "0") == "1"
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
+VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@example.com")
 SESSIONS = {}
 
 INITIAL_SIGNALS = [
@@ -59,6 +63,8 @@ def ensure_data_file():
     DATA_DIR.mkdir(exist_ok=True)
     if not DATA_FILE.exists():
         DATA_FILE.write_text(json.dumps(INITIAL_SIGNALS, indent=2), encoding="utf-8")
+    if not SUBSCRIPTIONS_FILE.exists():
+        SUBSCRIPTIONS_FILE.write_text("[]", encoding="utf-8")
 
 
 def read_signals():
@@ -69,6 +75,60 @@ def read_signals():
 def write_signals(signals):
     ensure_data_file()
     DATA_FILE.write_text(json.dumps(signals, indent=2), encoding="utf-8")
+
+
+def read_subscriptions():
+    ensure_data_file()
+    return json.loads(SUBSCRIPTIONS_FILE.read_text(encoding="utf-8"))
+
+
+def write_subscriptions(subscriptions):
+    ensure_data_file()
+    SUBSCRIPTIONS_FILE.write_text(json.dumps(subscriptions, indent=2), encoding="utf-8")
+
+
+def subscription_key(subscription):
+    return subscription.get("endpoint", "")
+
+
+def notification_payload(signal):
+    entry = signal.get("entry") or "entry pending"
+    return {
+        "title": f"XAUUSD {signal.get('direction', 'Signal')}",
+        "body": f"Entry: {entry}. Tap to open SignalDesk.",
+        "url": "/trade-signals-app.html",
+        "tag": f"signal-{signal.get('id')}",
+    }
+
+
+def send_push_notifications(signal):
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        return
+
+    try:
+        from pywebpush import WebPushException, webpush
+    except Exception:
+        return
+
+    subscriptions = read_subscriptions()
+    next_subscriptions = []
+    payload = json.dumps(notification_payload(signal))
+
+    for subscription in subscriptions:
+        try:
+            webpush(
+                subscription_info=subscription,
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_CLAIM_EMAIL},
+            )
+            next_subscriptions.append(subscription)
+        except WebPushException as error:
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            if status not in {404, 410}:
+                next_subscriptions.append(subscription)
+
+    write_subscriptions(next_subscriptions)
 
 
 def clean_signal(signal):
@@ -144,6 +204,9 @@ class SignalDeskHandler(SimpleHTTPRequestHandler):
         if path == "/api/session":
             self.send_json({"isAdmin": self.is_admin()})
             return
+        if path == "/api/push/public-key":
+            self.send_json({"publicKey": VAPID_PUBLIC_KEY, "enabled": bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)})
+            return
         if path == "/":
             self.path = "/trade-signals-app.html"
         super().do_GET()
@@ -181,7 +244,20 @@ class SignalDeskHandler(SimpleHTTPRequestHandler):
             signals = read_signals()
             signals.insert(0, signal)
             write_signals(signals)
+            send_push_notifications(signal)
             self.send_json({"signal": signal})
+            return
+
+        if path == "/api/push/subscribe":
+            subscription = self.read_json_body()
+            if not subscription.get("endpoint"):
+                self.send_json({"error": "Invalid push subscription"}, status=400)
+                return
+            subscriptions = read_subscriptions()
+            existing = {subscription_key(item): item for item in subscriptions}
+            existing[subscription_key(subscription)] = subscription
+            write_subscriptions(list(existing.values()))
+            self.send_json({"ok": True, "count": len(existing)})
             return
 
         if path == "/api/reset-demo":

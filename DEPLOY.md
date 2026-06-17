@@ -20,6 +20,9 @@ Use a platform that gives HTTPS and persistent storage, such as Render, Railway,
 - `SIGNALDESK_SECURE_COOKIES`: set to `1` when hosted on HTTPS.
 - `HOST`: use `0.0.0.0` on hosting.
 - `PORT`: hosting platforms usually set this automatically.
+- `VAPID_PUBLIC_KEY`: public key for web push notifications.
+- `VAPID_PRIVATE_KEY`: private key for web push notifications.
+- `VAPID_CLAIM_EMAIL`: contact email for push notification providers, such as `mailto:you@example.com`.
 
 ## Render Setup
 
@@ -34,6 +37,9 @@ Use a platform that gives HTTPS and persistent storage, such as Render, Railway,
    - `SIGNALDESK_DATA_DIR=/var/data`
    - `SIGNALDESK_SECURE_COOKIES=1`
    - `HOST=0.0.0.0`
+   - `VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `VAPID_CLAIM_EMAIL=mailto:you@example.com`
 
 After deployment, open the HTTPS URL on Android Chrome and choose **Add to Home screen**.
 
@@ -50,3 +56,22 @@ Then open:
 ```text
 http://127.0.0.1:4174/trade-signals-app.html
 ```
+
+## Web Push Notifications
+
+Generate VAPID keys locally:
+
+```powershell
+pip install -r requirements.txt
+python generate_vapid_keys.py
+```
+
+Copy the printed values into Render environment variables:
+
+```text
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_CLAIM_EMAIL=mailto:your-email@example.com
+```
+
+Redeploy after saving the variables. Members can then open the app and tap **Enable alerts**.

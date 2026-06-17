@@ -645,6 +645,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Demo data
         </button>
+        <button class="button secondary" type="button" id="notifyButton">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/></svg>
+          Enable alerts
+        </button>
       </section>
 
       <section class="summary" aria-label="Signal statistics">
@@ -857,7 +861,8 @@
       manualPriceButton: document.getElementById("manualPriceButton"),
       refreshPriceButton: document.getElementById("refreshPriceButton"),
       quickBuyButton: document.getElementById("quickBuyButton"),
-      quickSellButton: document.getElementById("quickSellButton")
+      quickSellButton: document.getElementById("quickSellButton"),
+      notifyButton: document.getElementById("notifyButton")
     };
 
     function loadSignals() {
@@ -948,6 +953,64 @@
         render();
         showToast(error.message);
       }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const rawData = window.atob(base64);
+      return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    function updateNotifyButton() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+        els.notifyButton.textContent = "Alerts unavailable";
+        els.notifyButton.disabled = true;
+        return;
+      }
+      if (Notification.permission === "granted") {
+        els.notifyButton.textContent = "Alerts enabled";
+      } else if (Notification.permission === "denied") {
+        els.notifyButton.textContent = "Alerts blocked";
+        els.notifyButton.disabled = true;
+      } else {
+        els.notifyButton.textContent = "Enable alerts";
+      }
+    }
+
+    async function enablePushNotifications() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+        showToast("Notifications are not supported here");
+        updateNotifyButton();
+        return;
+      }
+
+      const keyData = await apiRequest("/api/push/public-key");
+      if (!keyData.enabled || !keyData.publicKey) {
+        showToast("Push keys are not configured yet");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        updateNotifyButton();
+        showToast("Notifications were not allowed");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
+      });
+
+      await apiRequest("/api/push/subscribe", {
+        method: "POST",
+        body: JSON.stringify(subscription)
+      });
+
+      updateNotifyButton();
+      showToast("Signal alerts enabled");
     }
 
     async function deleteSignal(id) {
@@ -1242,6 +1305,9 @@
 
     els.quickBuyButton.addEventListener("click", () => quickPublish("BUY"));
     els.quickSellButton.addEventListener("click", () => quickPublish("SELL"));
+    els.notifyButton.addEventListener("click", () => {
+      enablePushNotifications().catch(error => showToast(error.message));
+    });
 
     els.loginForm.addEventListener("submit", async event => {
       event.preventDefault();
@@ -1361,6 +1427,7 @@
 
     render();
     syncFromBackend();
+    updateNotifyButton();
     refreshLivePrice();
     setInterval(refreshLivePrice, 60000);
 

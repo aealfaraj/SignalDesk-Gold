@@ -1,1 +1,2 @@
-# SignalDesk currently uses only the Python standard library.
+pywebpush==2.0.3
+cryptography==42.0.8
