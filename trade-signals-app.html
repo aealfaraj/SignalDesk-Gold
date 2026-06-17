@@ -652,6 +652,9 @@
         <button class="button secondary" type="button" id="testNotifyButton">
           Test alert
         </button>
+        <button class="button secondary" type="button" id="alertStatusButton">
+          Alert status
+        </button>
       </section>
 
       <section class="summary" aria-label="Signal statistics">
@@ -866,7 +869,8 @@
       quickBuyButton: document.getElementById("quickBuyButton"),
       quickSellButton: document.getElementById("quickSellButton"),
       notifyButton: document.getElementById("notifyButton"),
-      testNotifyButton: document.getElementById("testNotifyButton")
+      testNotifyButton: document.getElementById("testNotifyButton"),
+      alertStatusButton: document.getElementById("alertStatusButton")
     };
 
     function loadSignals() {
@@ -1021,7 +1025,20 @@
 
       updateNotifyButton();
       const status = await apiRequest("/api/push/status");
+      if (!status.subscriptions) {
+        showToast("Alert save failed. Refresh and tap Enable alerts again.");
+        return;
+      }
       showToast(`Signal alerts enabled (${status.subscriptions} device${status.subscriptions === 1 ? "" : "s"})`);
+    }
+
+    async function showAlertStatus() {
+      const status = await apiRequest("/api/push/status");
+      if (!status.enabled) {
+        showToast("Push keys missing in Render environment");
+        return;
+      }
+      showToast(`Alerts: ${status.subscriptions} subscribed device${status.subscriptions === 1 ? "" : "s"}`);
     }
 
     async function testPushNotification() {
@@ -1238,6 +1255,7 @@
       els.adminPanel.style.display = canEdit ? "block" : "none";
       els.seedButton.style.display = canEdit ? "inline-flex" : "none";
       els.testNotifyButton.style.display = canEdit ? "inline-flex" : "none";
+      els.alertStatusButton.style.display = canEdit ? "inline-flex" : "none";
       els.viewTitle.textContent = admin ? (isAdminUnlocked ? "Admin dashboard" : "Admin access") : "Member signal feed";
       els.viewSubtitle.textContent = admin
         ? (isAdminUnlocked ? "Create, update, and publish signals for your members." : "Unlock the dashboard to manage published signals.")
@@ -1332,6 +1350,9 @@
     });
     els.testNotifyButton.addEventListener("click", () => {
       testPushNotification().catch(error => showToast(error.message));
+    });
+    els.alertStatusButton.addEventListener("click", () => {
+      showAlertStatus().catch(error => showToast(error.message));
     });
 
     els.loginForm.addEventListener("submit", async event => {
