@@ -1,4 +1,4 @@
-const CACHE_NAME = "signaldesk-v3";
+const CACHE_NAME = "signaldesk-v4";
 const APP_SHELL = [
   "/",
   "/trade-signals-app.html",
