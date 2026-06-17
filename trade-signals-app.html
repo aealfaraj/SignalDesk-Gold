@@ -233,6 +233,23 @@
       justify-content: flex-end;
     }
 
+    .alert-status {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #35433f;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .alert-status strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+
     .manual-price {
       width: 150px;
       min-height: 40px;
@@ -664,6 +681,11 @@
         <div class="metric"><span>Net P/L points</span><strong id="profitMetric">0.00</strong></div>
       </section>
 
+      <section class="alert-status" id="alertStatusPanel" aria-live="polite">
+        <strong>Alerts</strong>
+        <span id="alertStatusText">Tap Enable alerts on the member phone.</span>
+      </section>
+
       <section class="market-strip" aria-label="Live XAUUSD market price">
         <div>
           <h3>XAUUSD live price</h3>
@@ -870,7 +892,8 @@
       quickSellButton: document.getElementById("quickSellButton"),
       notifyButton: document.getElementById("notifyButton"),
       testNotifyButton: document.getElementById("testNotifyButton"),
-      alertStatusButton: document.getElementById("alertStatusButton")
+      alertStatusButton: document.getElementById("alertStatusButton"),
+      alertStatusText: document.getElementById("alertStatusText")
     };
 
     function loadSignals() {
@@ -986,23 +1009,28 @@
       }
     }
 
+    function setAlertStatus(message) {
+      els.alertStatusText.textContent = message;
+      showToast(message);
+    }
+
     async function enablePushNotifications() {
       if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-        showToast("Notifications are not supported here");
+        setAlertStatus("Notifications are not supported here.");
         updateNotifyButton();
         return;
       }
 
       const keyData = await apiRequest("/api/push/public-key");
       if (!keyData.enabled || !keyData.publicKey) {
-        showToast("Push keys are not configured yet");
+        setAlertStatus("Push keys are not configured yet in Render.");
         return;
       }
 
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         updateNotifyButton();
-        showToast("Notifications were not allowed");
+        setAlertStatus("Notifications were not allowed on this phone.");
         return;
       }
 
@@ -1026,10 +1054,10 @@
       updateNotifyButton();
       const status = await apiRequest("/api/push/status");
       if (!status.subscriptions) {
-        showToast("Alert save failed. Refresh and tap Enable alerts again.");
+        setAlertStatus("Alert save failed. Refresh and tap Enable alerts again.");
         return;
       }
-      showToast(`Signal alerts enabled (${status.subscriptions} device${status.subscriptions === 1 ? "" : "s"})`);
+      setAlertStatus(`Signal alerts enabled (${status.subscriptions} device${status.subscriptions === 1 ? "" : "s"}).`);
     }
 
     async function saveExistingPushSubscription() {
@@ -1051,20 +1079,20 @@
       await saveExistingPushSubscription().catch(() => false);
       const status = await apiRequest("/api/push/status");
       if (!status.enabled) {
-        showToast("Push keys missing in Render environment");
+        setAlertStatus("Push keys missing in Render environment.");
         return;
       }
-      showToast(`Alerts: ${status.subscriptions} subscribed device${status.subscriptions === 1 ? "" : "s"}`);
+      setAlertStatus(`Alerts: ${status.subscriptions} subscribed device${status.subscriptions === 1 ? "" : "s"}.`);
     }
 
     async function testPushNotification() {
       const data = await apiRequest("/api/push/test", { method: "POST" });
       const result = data.result || {};
       if (!result.attempted) {
-        showToast("No subscribed devices. Tap Enable alerts on the phone first.");
+        setAlertStatus("No subscribed devices. Tap Enable alerts on the phone first.");
         return;
       }
-      showToast(`Test alert: sent ${result.sent || 0}/${result.attempted || 0}${result.error ? ` - ${result.error}` : ""}`);
+      setAlertStatus(`Test alert: sent ${result.sent || 0}/${result.attempted || 0}${result.error ? ` - ${result.error}` : ""}`);
     }
 
     async function deleteSignal(id) {
