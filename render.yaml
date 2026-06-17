@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: signaldesk
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: SIGNALDESK_SECURE_COOKIES
+        value: "1"
+      - key: SIGNALDESK_ADMIN_CODE
+        sync: false
+      - key: SIGNALDESK_DATA_DIR
+        value: /var/data
+    disk:
+      name: signaldesk-data
+      mountPath: /var/data
+      sizeGB: 1

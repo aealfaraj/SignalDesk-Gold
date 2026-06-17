@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101716">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SignalDesk">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <title>SignalDesk</title>
+  <style>
+    :root {
+      --bg: #f4f7f6;
+      --panel: #ffffff;
+      --text: #14211f;
+      --muted: #667470;
+      --line: #dce5e2;
+      --accent: #0d7b6c;
+      --accent-dark: #075f54;
+      --danger: #b33542;
+      --warn: #a46a16;
+      --good: #147a45;
+      --ink: #101716;
+      --shadow: 0 12px 30px rgba(20, 33, 31, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(180deg, rgba(13, 123, 108, 0.08), transparent 280px),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    aside {
+      background: #101716;
+      color: white;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #17a893;
+      color: #fff;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      display: block;
+      color: #a9b8b4;
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-button {
+      border: 0;
+      width: 100%;
+      min-height: 42px;
+      border-radius: 8px;
+      color: #dce5e2;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .nav-button svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .nav-button.active, .nav-button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    .side-card {
+      margin-top: auto;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      padding: 14px;
+      color: #dce5e2;
+      background: rgba(255,255,255,0.06);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    main {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      min-height: 64px;
+    }
+
+    .page-title h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .page-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric, .panel, .signal-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      padding: 16px;
+      min-height: 92px;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric strong {
+      font-size: 25px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .metric strong.positive, .positive { color: var(--good); }
+    .metric strong.negative, .negative { color: var(--danger); }
+
+    .market-strip {
+      background: #101716;
+      color: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    .market-strip h3 {
+      margin: 0;
+      font-size: 15px;
+      color: #a9b8b4;
+      letter-spacing: 0;
+    }
+
+    .live-price {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .live-price strong {
+      font-size: 34px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .live-price span {
+      color: #b8c6c2;
+      font-size: 13px;
+    }
+
+    .market-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .manual-price {
+      width: 150px;
+      min-height: 40px;
+      background: #fff;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(340px, 430px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel h3 {
+      margin: 0 0 14px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      color: #33413e;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cfdad7;
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 9px 11px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(13, 123, 108, 0.15);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-trade {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .quick-trade button {
+      border: 0;
+      border-radius: 8px;
+      min-height: 74px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      letter-spacing: 0;
+    }
+
+    .quick-trade button span {
+      font-size: 12px;
+      font-weight: 750;
+      opacity: 0.86;
+    }
+
+    .quick-buy { background: var(--good); }
+    .quick-sell { background: var(--danger); }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      border: 0;
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 800;
+      background: var(--accent);
+      color: white;
+    }
+
+    .button.secondary {
+      background: #e8efed;
+      color: #22302d;
+    }
+
+    .button.danger {
+      background: #f3dddd;
+      color: var(--danger);
+    }
+
+    .button svg { width: 18px; height: 18px; flex: 0 0 auto; }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .search-wrap {
+      flex: 1 1 220px;
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #72817d;
+      width: 17px;
+      height: 17px;
+    }
+
+    .search-wrap input { padding-left: 38px; }
+
+    .segment {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .segment button {
+      border: 0;
+      min-height: 40px;
+      padding: 0 12px;
+      background: transparent;
+      cursor: pointer;
+      color: #52615d;
+      font-weight: 750;
+    }
+
+    .segment button.active {
+      background: #101716;
+      color: #fff;
+    }
+
+    .signals {
+      display: grid;
+      gap: 12px;
+    }
+
+    .signal-card {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .signal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .pair {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .direction {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #fff;
+      flex: 0 0 auto;
+    }
+
+    .direction.buy { background: var(--good); }
+    .direction.sell { background: var(--danger); }
+
+    .pair h4 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .pair small {
+      color: var(--muted);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .badge.active { color: #075f54; background: #dff4ef; border-color: #bde5dd; }
+    .badge.win { color: #0c6638; background: #ddf2e6; border-color: #b8dfc9; }
+    .badge.loss { color: #9a2633; background: #f7dddd; border-color: #edb8bf; }
+    .badge.closed { color: #66511a; background: #f6edcf; border-color: #ead997; }
+
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .price-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 70px;
+      background: #fbfcfc;
+    }
+
+    .price-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+      font-weight: 800;
+    }
+
+    .price-box strong {
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .notes {
+      color: #394845;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .status-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #35433f;
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .icon-button svg { width: 17px; height: 17px; }
+
+    .empty {
+      border: 1px dashed #b7c5c1;
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(255,255,255,0.6);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: #101716;
+      color: white;
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: 180ms ease;
+      max-width: min(340px, calc(100vw - 36px));
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 1fr; }
+      aside {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 14px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      aside::-webkit-scrollbar { display: none; }
+      .brand { min-width: 200px; }
+      nav { grid-auto-flow: column; grid-auto-columns: max-content; }
+      .side-card { display: none; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .market-strip { grid-template-columns: 1fr; }
+      .market-actions { justify-content: flex-start; }
+      .workspace { grid-template-columns: 1fr; }
+      main { padding: 18px; }
+    }
+
+    @media (max-width: 620px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .summary { grid-template-columns: 1fr; }
+      .two-col, .price-grid { grid-template-columns: 1fr; }
+      .filters { align-items: stretch; }
+      .market-actions, .manual-price { width: 100%; }
+      .segment, .search-wrap { width: 100%; }
+      .segment button { flex: 1 1 0; padding: 0 8px; }
+      .page-title h2 { font-size: 23px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside>
+      <div class="brand" aria-label="SignalDesk">
+        <div class="brand-mark">SD</div>
+        <div>
+          <h1>SignalDesk</h1>
+          <span>Trade signal hub</span>
+        </div>
+      </div>
+
+      <nav aria-label="Primary navigation">
+        <button class="nav-button active" type="button" data-tab="admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3z"/><path d="M13 21h8V11h-8z"/><path d="M13 3h8v6h-8z"/><path d="M3 21h8v-6H3z"/></svg>
+          Admin
+        </button>
+        <button class="nav-button" type="button" data-tab="feed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 14 4-4 3 3 5-7"/></svg>
+          User feed
+        </button>
+      </nav>
+
+      <div class="side-card">
+        Signals are educational market commentary. Add your own risk rules and never promise profit.
+      </div>
+    </aside>
+
+    <main>
+      <section class="topbar">
+        <div class="page-title">
+          <h2 id="viewTitle">Admin dashboard</h2>
+          <p id="viewSubtitle">Create, update, and publish signals for your members.</p>
+        </div>
+        <button class="button secondary" type="button" id="seedButton">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Demo data
+        </button>
+      </section>
+
+      <section class="summary" aria-label="Signal statistics">
+        <div class="metric"><span>Active signals</span><strong id="activeMetric">0</strong></div>
+        <div class="metric"><span>TP hits</span><strong id="winMetric">0</strong></div>
+        <div class="metric"><span>Closed / SL</span><strong id="closedMetric">0</strong></div>
+        <div class="metric"><span>Net P/L points</span><strong id="profitMetric">0.00</strong></div>
+      </section>
+
+      <section class="market-strip" aria-label="Live XAUUSD market price">
+        <div>
+          <h3>XAUUSD live price</h3>
+          <div class="live-price">
+            <strong id="livePrice">Loading...</strong>
+            <span id="priceMeta">Connecting to market data</span>
+          </div>
+        </div>
+        <div class="market-actions">
+          <input class="manual-price" id="manualPrice" inputmode="decimal" placeholder="Manual price">
+          <button class="button secondary" type="button" id="manualPriceButton">Set price</button>
+          <button class="button" type="button" id="refreshPriceButton">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Refresh
+          </button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="panel" id="loginPanel">
+          <h3>Admin access</h3>
+          <form id="loginForm">
+            <div class="field">
+              <label for="passcode">Passcode</label>
+              <input id="passcode" type="password" placeholder="Enter admin passcode" autocomplete="current-password" required>
+            </div>
+            <div class="actions">
+              <button class="button" type="submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+                Unlock
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel" id="adminPanel">
+          <h3 id="formTitle">Publish signal</h3>
+          <div class="quick-trade" aria-label="Quick publish XAUUSD signal">
+            <button class="quick-buy" type="button" id="quickBuyButton">BUY <span>Publish now</span></button>
+            <button class="quick-sell" type="button" id="quickSellButton">SELL <span>Publish now</span></button>
+          </div>
+          <form id="signalForm">
+            <input type="hidden" id="signalId">
+            <div class="two-col">
+              <div class="field">
+                <label for="symbol">Symbol</label>
+                <input id="symbol" value="XAUUSD" readonly required>
+              </div>
+              <div class="field">
+                <label for="direction">Direction</label>
+                <select id="direction" required>
+                  <option value="BUY">BUY</option>
+                  <option value="SELL">SELL</option>
+                </select>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="entry">Entry</label>
+                <input id="entry" placeholder="Uses live/manual price if empty">
+              </div>
+              <div class="field">
+                <label for="status">Status</label>
+                <select id="status" required>
+                  <option value="active">Active</option>
+                  <option value="win">Hit TP</option>
+                  <option value="loss">Hit SL</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="stopLoss">Stop loss</label>
+                <input id="stopLoss" placeholder="Add later">
+              </div>
+              <div class="field">
+                <label for="takeProfit">Take profit</label>
+                <input id="takeProfit" placeholder="Add later">
+              </div>
+            </div>
+            <div class="field">
+              <label for="closePrice">Close price</label>
+              <input id="closePrice" inputmode="decimal" placeholder="Auto-filled when you mark TP, SL, or Closed">
+            </div>
+            <div class="field">
+              <label for="notes">Notes</label>
+              <textarea id="notes" placeholder="Reason for the setup, risk note, invalidation level"></textarea>
+            </div>
+            <div class="actions">
+              <button class="button" type="submit" id="submitButton">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                Publish
+              </button>
+              <button class="button secondary" type="button" id="resetButton">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <div>
+          <div class="filters">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="searchInput" placeholder="Search symbol or notes">
+            </div>
+            <div class="segment" aria-label="Filter signals">
+              <button type="button" class="active" data-filter="all">All</button>
+              <button type="button" data-filter="active">Active</button>
+              <button type="button" data-filter="win">TP</button>
+              <button type="button" data-filter="closed">Closed</button>
+            </div>
+          </div>
+          <div class="signals" id="signalsList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const storageKey = "signaldesk.signals.v1";
+    const initialSignals = [
+      {
+        id: crypto.randomUUID(),
+        symbol: "XAUUSD",
+        direction: "BUY",
+        entry: "2338.50",
+        stopLoss: "2328.00",
+        takeProfit: "2355.00",
+        closePrice: "",
+        status: "active",
+        notes: "Liquidity sweep confirmed. Keep risk tight and move stop after partials.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 38).toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        symbol: "XAUUSD",
+        direction: "SELL",
+        entry: "2364.20",
+        stopLoss: "2372.10",
+        takeProfit: "2348.50",
+        closePrice: "2348.50",
+        status: "win",
+        notes: "London rejection from supply. TP reached cleanly.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        symbol: "XAUUSD",
+        direction: "BUY",
+        entry: "2312.40",
+        stopLoss: "2304.30",
+        takeProfit: "2329.00",
+        closePrice: "2320.80",
+        status: "closed",
+        notes: "Closed manually before news. No new entry until volatility cools.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
+      }
+    ];
+
+    let signals = loadSignals();
+    let activeFilter = "all";
+    let activeTab = "admin";
+    let isAdminUnlocked = sessionStorage.getItem("signaldesk.admin") === "true";
+    let currentPrice = null;
+    let manualPriceActive = false;
+    const adminPasscode = "1234";
+
+    const els = {
+      activeMetric: document.getElementById("activeMetric"),
+      winMetric: document.getElementById("winMetric"),
+      closedMetric: document.getElementById("closedMetric"),
+      profitMetric: document.getElementById("profitMetric"),
+      signalsList: document.getElementById("signalsList"),
+      form: document.getElementById("signalForm"),
+      signalId: document.getElementById("signalId"),
+      symbol: document.getElementById("symbol"),
+      direction: document.getElementById("direction"),
+      entry: document.getElementById("entry"),
+      stopLoss: document.getElementById("stopLoss"),
+      takeProfit: document.getElementById("takeProfit"),
+      closePrice: document.getElementById("closePrice"),
+      status: document.getElementById("status"),
+      notes: document.getElementById("notes"),
+      formTitle: document.getElementById("formTitle"),
+      submitButton: document.getElementById("submitButton"),
+      resetButton: document.getElementById("resetButton"),
+      searchInput: document.getElementById("searchInput"),
+      toast: document.getElementById("toast"),
+      adminPanel: document.getElementById("adminPanel"),
+      viewTitle: document.getElementById("viewTitle"),
+      viewSubtitle: document.getElementById("viewSubtitle"),
+      seedButton: document.getElementById("seedButton"),
+      loginPanel: document.getElementById("loginPanel"),
+      loginForm: document.getElementById("loginForm"),
+      passcode: document.getElementById("passcode"),
+      livePrice: document.getElementById("livePrice"),
+      priceMeta: document.getElementById("priceMeta"),
+      manualPrice: document.getElementById("manualPrice"),
+      manualPriceButton: document.getElementById("manualPriceButton"),
+      refreshPriceButton: document.getElementById("refreshPriceButton"),
+      quickBuyButton: document.getElementById("quickBuyButton"),
+      quickSellButton: document.getElementById("quickSellButton")
+    };
+
+    function loadSignals() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (!saved) return initialSignals;
+        return saved.map(signal => ({
+          ...signal,
+          symbol: "XAUUSD",
+          closePrice: signal.closePrice || ""
+        }));
+      } catch {
+        return initialSignals;
+      }
+    }
+
+    function saveSignals() {
+      localStorage.setItem(storageKey, JSON.stringify(signals));
+    }
+
+    let backendEnabled = false;
+
+    async function apiRequest(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      const data = await response.json();
+      backendEnabled = true;
+      if (!response.ok) throw new Error(data.error || "Request failed");
+      return data;
+    }
+
+    async function syncFromBackend() {
+      try {
+        const data = await apiRequest("/api/signals");
+        signals = data.signals;
+        isAdminUnlocked = data.isAdmin;
+        sessionStorage.setItem("signaldesk.admin", String(isAdminUnlocked));
+        saveSignals();
+        render();
+      } catch {
+        backendEnabled = false;
+      }
+    }
+
+    async function createSignal(signal) {
+      signals = [signal, ...signals];
+      saveSignals();
+      render();
+
+      if (!backendEnabled) return;
+      try {
+        const data = await apiRequest("/api/signals", {
+          method: "POST",
+          body: JSON.stringify(signal)
+        });
+        signals = signals.map(item => item.id === signal.id ? data.signal : item);
+        saveSignals();
+        render();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    async function updateSignal(id, patch) {
+      const previous = signals.slice();
+      signals = signals.map(signal => signal.id === id ? { ...signal, ...patch } : signal);
+      saveSignals();
+      render();
+
+      if (!backendEnabled) return;
+      try {
+        const data = await apiRequest(`/api/signals/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify(patch)
+        });
+        signals = signals.map(signal => signal.id === id ? data.signal : signal);
+        saveSignals();
+        render();
+      } catch (error) {
+        signals = previous;
+        saveSignals();
+        render();
+        showToast(error.message);
+      }
+    }
+
+    async function deleteSignal(id) {
+      const previous = signals.slice();
+      signals = signals.filter(signal => signal.id !== id);
+      saveSignals();
+      render();
+
+      if (!backendEnabled) return;
+      try {
+        await apiRequest(`/api/signals/${encodeURIComponent(id)}`, { method: "DELETE" });
+      } catch (error) {
+        signals = previous;
+        saveSignals();
+        render();
+        showToast(error.message);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function relativeTime(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const minutes = Math.max(1, Math.floor(diff / 60000));
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      return `${Math.floor(hours / 24)}d ago`;
+    }
+
+    function statusLabel(status) {
+      return { active: "Active", win: "Hit TP", loss: "Hit SL", closed: "Closed" }[status] || status;
+    }
+
+    function statusClass(status) {
+      return status === "loss" ? "loss" : status;
+    }
+
+    function parsePrice(value) {
+      const number = Number.parseFloat(String(value || "").replace(/,/g, ""));
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function formatPrice(value) {
+      const number = parsePrice(value);
+      return number === null ? "--" : number.toFixed(2);
+    }
+
+    function displayPrice(value, fallback = "Add later") {
+      const number = parsePrice(value);
+      return number === null ? fallback : number.toFixed(2);
+    }
+
+    function signalPnl(signal) {
+      const entry = parsePrice(signal.entry);
+      const close = parsePrice(signal.closePrice);
+      if (entry === null || close === null || signal.status === "active") return null;
+      const raw = signal.direction === "SELL" ? entry - close : close - entry;
+      return Number(raw.toFixed(2));
+    }
+
+    function formatPnl(value) {
+      if (value === null) return "Open";
+      const sign = value > 0 ? "+" : "";
+      return `${sign}${value.toFixed(2)} pts`;
+    }
+
+    function closePriceForStatus(signal, status) {
+      if (status === "win") return signal.takeProfit || (currentPrice !== null ? currentPrice.toFixed(2) : signal.closePrice || "");
+      if (status === "loss") return signal.stopLoss || (currentPrice !== null ? currentPrice.toFixed(2) : signal.closePrice || "");
+      if (status === "closed" && currentPrice !== null) return currentPrice.toFixed(2);
+      return signal.closePrice || "";
+    }
+
+    function renderMetrics() {
+      els.activeMetric.textContent = signals.filter(s => s.status === "active").length;
+      els.winMetric.textContent = signals.filter(s => s.status === "win").length;
+      els.closedMetric.textContent = signals.filter(s => ["closed", "loss"].includes(s.status)).length;
+      const net = signals.reduce((sum, signal) => sum + (signalPnl(signal) || 0), 0);
+      els.profitMetric.textContent = formatPnl(net).replace(" pts", "");
+      els.profitMetric.classList.toggle("positive", net > 0);
+      els.profitMetric.classList.toggle("negative", net < 0);
+    }
+
+    function setLivePrice(price, source) {
+      currentPrice = price;
+      els.livePrice.textContent = `$${price.toFixed(2)}`;
+      els.priceMeta.textContent = `${source} - ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 4500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function refreshLivePrice() {
+      els.priceMeta.textContent = "Refreshing market data";
+      const sources = [
+        async () => {
+          const response = await fetchWithTimeout("https://query1.finance.yahoo.com/v8/finance/chart/GC=F?range=1d&interval=1m");
+          const data = await response.json();
+          const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (!Number.isFinite(price)) throw new Error("Yahoo price unavailable");
+          return { price, source: "Gold futures proxy" };
+        },
+        async () => {
+          const url = encodeURIComponent("https://stooq.com/q/l/?s=xauusd&f=sd2t2ohlcv&h&e=csv");
+          const response = await fetchWithTimeout(`https://api.allorigins.win/raw?url=${url}`);
+          const text = await response.text();
+          const rows = text.trim().split(/\r?\n/);
+          const values = rows[1]?.split(",");
+          const price = parsePrice(values?.[6] || values?.[3]);
+          if (price === null) throw new Error("Spot price unavailable");
+          return { price, source: "XAUUSD spot proxy" };
+        }
+      ];
+
+      for (const source of sources) {
+        try {
+          const result = await source();
+          manualPriceActive = false;
+          setLivePrice(result.price, result.source);
+          return;
+        } catch {}
+      }
+
+      els.livePrice.textContent = currentPrice === null ? "Manual needed" : `$${currentPrice.toFixed(2)}`;
+      els.priceMeta.textContent = manualPriceActive ? "Manual price active" : "Live feed blocked. Enter price manually.";
+    }
+
+    function renderSignals() {
+      const canEdit = activeTab === "admin" && isAdminUnlocked;
+      const query = els.searchInput.value.trim().toLowerCase();
+      const visible = signals
+        .filter(signal => activeFilter === "all" || signal.status === activeFilter || (activeFilter === "closed" && signal.status === "loss"))
+        .filter(signal => !query || `${signal.symbol} ${signal.notes}`.toLowerCase().includes(query))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      if (!visible.length) {
+        els.signalsList.innerHTML = `<div class="empty">No signals match this view.</div>`;
+        return;
+      }
+
+      els.signalsList.innerHTML = visible.map(signal => `
+        <article class="signal-card">
+          <div class="signal-head">
+            <div class="pair">
+              <div class="direction ${signal.direction.toLowerCase()}">${signal.direction === "BUY" ? "B" : "S"}</div>
+              <div>
+                <h4>${escapeHtml(signal.symbol)}</h4>
+                <small>${signal.direction} signal - ${relativeTime(signal.createdAt)}</small>
+              </div>
+            </div>
+            <span class="badge ${statusClass(signal.status)}">${statusLabel(signal.status)}</span>
+          </div>
+          <div class="price-grid">
+            <div class="price-box"><span>Entry</span><strong>${escapeHtml(displayPrice(signal.entry))}</strong></div>
+            <div class="price-box"><span>Stop loss</span><strong>${escapeHtml(displayPrice(signal.stopLoss))}</strong></div>
+            <div class="price-box"><span>Take profit</span><strong>${escapeHtml(displayPrice(signal.takeProfit))}</strong></div>
+            <div class="price-box"><span>Close / P&L</span><strong class="${(signalPnl(signal) || 0) > 0 ? "positive" : (signalPnl(signal) || 0) < 0 ? "negative" : ""}">${escapeHtml(formatPrice(signal.closePrice))} - ${escapeHtml(formatPnl(signalPnl(signal)))}</strong></div>
+          </div>
+          <p class="notes">${escapeHtml(signal.notes || "No notes added.")}</p>
+          <div class="card-actions">
+            <div class="status-actions">
+              ${canEdit ? `
+                <button class="button secondary" type="button" data-action="status" data-status="active" data-id="${signal.id}">Active</button>
+                <button class="button secondary" type="button" data-action="status" data-status="win" data-id="${signal.id}">TP</button>
+                <button class="button secondary" type="button" data-action="status" data-status="loss" data-id="${signal.id}">SL</button>
+                <button class="button secondary" type="button" data-action="status" data-status="closed" data-id="${signal.id}">Closed</button>
+              ` : `<small>Educational signal only. Manage your own risk.</small>`}
+            </div>
+            ${canEdit ? `
+              <div>
+                <button class="icon-button" type="button" title="Edit signal" data-action="edit" data-id="${signal.id}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
+                <button class="icon-button" type="button" title="Delete signal" data-action="delete" data-id="${signal.id}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </button>
+              </div>
+            ` : ""}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderChrome() {
+      const admin = activeTab === "admin";
+      const canEdit = admin && isAdminUnlocked;
+      els.loginPanel.style.display = admin && !isAdminUnlocked ? "block" : "none";
+      els.adminPanel.style.display = canEdit ? "block" : "none";
+      els.seedButton.style.display = canEdit ? "inline-flex" : "none";
+      els.viewTitle.textContent = admin ? (isAdminUnlocked ? "Admin dashboard" : "Admin access") : "Member signal feed";
+      els.viewSubtitle.textContent = admin
+        ? (isAdminUnlocked ? "Create, update, and publish signals for your members." : "Unlock the dashboard to manage published signals.")
+        : "Latest trade ideas from your signal provider.";
+      document.querySelectorAll(".nav-button").forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === activeTab);
+      });
+    }
+
+    function render() {
+      renderMetrics();
+      renderChrome();
+      renderSignals();
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function resetForm() {
+      els.form.reset();
+      els.signalId.value = "";
+      els.symbol.value = "XAUUSD";
+      els.status.value = "active";
+      els.formTitle.textContent = "Publish signal";
+      els.submitButton.lastChild.textContent = " Publish";
+    }
+
+    async function quickPublish(direction) {
+      const price = currentPrice !== null ? currentPrice.toFixed(2) : els.entry.value.trim();
+      const signal = {
+        id: crypto.randomUUID(),
+        symbol: "XAUUSD",
+        direction,
+        entry: price,
+        stopLoss: "",
+        takeProfit: "",
+        closePrice: "",
+        status: "active",
+        notes: price ? `Quick ${direction} signal from XAUUSD live price.` : `Quick ${direction} signal. Add entry, SL, and TP later.`,
+        createdAt: new Date().toISOString()
+      };
+
+      await createSignal(signal);
+      showToast(`${direction} signal published`);
+    }
+
+    els.form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const payload = {
+        id: els.signalId.value || crypto.randomUUID(),
+        symbol: els.symbol.value.trim().toUpperCase(),
+        direction: els.direction.value,
+        entry: els.entry.value.trim(),
+        stopLoss: els.stopLoss.value.trim(),
+        takeProfit: els.takeProfit.value.trim(),
+        closePrice: els.closePrice.value.trim(),
+        status: els.status.value,
+        notes: els.notes.value.trim(),
+        createdAt: els.signalId.value
+          ? signals.find(signal => signal.id === els.signalId.value)?.createdAt || new Date().toISOString()
+          : new Date().toISOString()
+      };
+
+      if (els.signalId.value) {
+        await updateSignal(payload.id, payload);
+      } else {
+        await createSignal(payload);
+      }
+      resetForm();
+      showToast("Signal saved");
+    });
+
+    els.resetButton.addEventListener("click", resetForm);
+
+    els.status.addEventListener("change", () => {
+      if (els.status.value === "win") els.closePrice.value = els.takeProfit.value;
+      if (els.status.value === "loss") els.closePrice.value = els.stopLoss.value;
+      if (els.status.value === "closed" && !els.closePrice.value && currentPrice !== null) {
+        els.closePrice.value = currentPrice.toFixed(2);
+      }
+      if (els.status.value === "active") els.closePrice.value = "";
+    });
+
+    els.quickBuyButton.addEventListener("click", () => quickPublish("BUY"));
+    els.quickSellButton.addEventListener("click", () => quickPublish("SELL"));
+
+    els.loginForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      try {
+        const data = await apiRequest("/api/login", {
+          method: "POST",
+          body: JSON.stringify({ passcode: els.passcode.value })
+        });
+        isAdminUnlocked = data.isAdmin;
+        sessionStorage.setItem("signaldesk.admin", "true");
+        els.passcode.value = "";
+        render();
+        showToast("Admin unlocked");
+        return;
+      } catch {
+      }
+
+      if (!backendEnabled && els.passcode.value === adminPasscode) {
+        isAdminUnlocked = true;
+        sessionStorage.setItem("signaldesk.admin", "true");
+        els.passcode.value = "";
+        render();
+        showToast("Admin unlocked");
+        return;
+      }
+      showToast("Incorrect passcode");
+    });
+
+    els.seedButton.addEventListener("click", async () => {
+      if (backendEnabled) {
+        try {
+          const data = await apiRequest("/api/reset-demo", { method: "POST" });
+          signals = data.signals;
+          saveSignals();
+          resetForm();
+          render();
+          showToast("Demo data restored");
+          return;
+        } catch (error) {
+          showToast(error.message);
+          return;
+        }
+      }
+
+      signals = initialSignals.map(signal => ({ ...signal, id: crypto.randomUUID() }));
+      saveSignals();
+      resetForm();
+      render();
+      showToast("Demo data restored");
+    });
+
+    els.refreshPriceButton.addEventListener("click", refreshLivePrice);
+
+    els.manualPriceButton.addEventListener("click", () => {
+      const price = parsePrice(els.manualPrice.value);
+      if (price === null) {
+        showToast("Enter a valid XAUUSD price");
+        return;
+      }
+      manualPriceActive = true;
+      setLivePrice(price, "Manual price");
+      showToast("Live price updated");
+    });
+
+    els.signalsList.addEventListener("click", async event => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const signal = signals.find(item => item.id === button.dataset.id);
+      if (!signal) return;
+
+      if (button.dataset.action === "edit") {
+        els.signalId.value = signal.id;
+        els.symbol.value = signal.symbol;
+        els.direction.value = signal.direction;
+        els.entry.value = signal.entry;
+        els.stopLoss.value = signal.stopLoss;
+        els.takeProfit.value = signal.takeProfit;
+        els.closePrice.value = signal.closePrice || "";
+        els.status.value = signal.status;
+        els.notes.value = signal.notes;
+        els.formTitle.textContent = "Edit signal";
+        els.submitButton.lastChild.textContent = " Save";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      if (button.dataset.action === "delete") {
+        await deleteSignal(signal.id);
+        showToast("Signal deleted");
+      }
+
+      if (button.dataset.action === "status") {
+        const nextStatus = button.dataset.status;
+        await updateSignal(signal.id, {
+          status: nextStatus,
+          closePrice: closePriceForStatus(signal, nextStatus)
+        });
+        showToast(`Marked ${statusLabel(nextStatus)}`);
+      }
+    });
+
+    els.searchInput.addEventListener("input", renderSignals);
+
+    document.querySelectorAll(".segment button").forEach(button => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter;
+        document.querySelectorAll(".segment button").forEach(item => item.classList.toggle("active", item === button));
+        renderSignals();
+      });
+    });
+
+    document.querySelectorAll(".nav-button").forEach(button => {
+      button.addEventListener("click", () => {
+        activeTab = button.dataset.tab;
+        render();
+      });
+    });
+
+    render();
+    syncFromBackend();
+    refreshLivePrice();
+    setInterval(refreshLivePrice, 60000);
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
